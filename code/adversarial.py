@@ -1,11 +1,13 @@
 import torch
 import torch.nn.functional as F 
 
+from loss import NT_xent_loss
+
 
 def project(adv: torch.Tensor, orig: torch.Tensor, epsilon: float):
     max_x = orig + epsilon
     min_x = orig - epsilon
-
+    prev = adv.clone()
     adv = torch.max(torch.min(adv, max_x), min_x)
     return adv
 
@@ -29,16 +31,17 @@ def perturb_img(imgs: torch.Tensor, epsilon: float, min_val: float, max_val: flo
     -------
     torch.Tensor
     """
-    noise = torch.Tensor(imgs.shape).uniform(-epsilon, epsilon)
+    noise = torch.zeros(imgs.shape).uniform_(-epsilon, epsilon)
     imgs += noise
     return imgs.clamp(min_val, max_val)
 
 
 class FGSM(object):
+    # NEED TO TEST
     """
     class to handle fast gradient sign adversarial attacks
     """
-    def __init__(model: torch.nn.Module, epsilon: float, min_val: float, max_val: float, alpha: float, n: int):
+    def __init__(self, model: torch.nn.Module, epsilon: float, min_val: float, max_val: float, alpha: float, n: int):
         """
         Parameters
         ----------
@@ -86,43 +89,65 @@ class FGSM(object):
         adv = imgs.clone()
 
         if perturb:
-            adv = perturb_img(adv, epsilon, min_val, max_val)
+            adv = perturb_img(adv, self.epsilon, self.min_val, self.max_val)
         
         # apply gradients
         adv.requires_grad = True
 
         self.model.eval()
         with torch.enable_grad():
-            for _ in range(n):
+            for _ in range(self.n):
                 self.model.zero_grad()
-
                 # compute loss
-                logits = self.model(x)
+                logits = self.model(adv)
                 loss = F.cross_entropy(logits, labels)
 
                 # get gradient of loss for image
-                grad = torch.autograd.grad(loss, x, only_inputs=True, retain_graph=False)
+                grad = torch.autograd.grad(loss, adv, only_inputs=True, retain_graph=False)
                 grad = torch.sign(grad[0])
 
                 # step
-                adv += self.alpha * grad
+                adv = adv + self.alpha * grad
                 adv = adv.clamp(min_val, max_val)
                 adv = project(adv, imgs, self.epsilon)
     
-    return adv.detach()
+        return adv.detach()
 
 
 class InstanceAdversary(object):
     """
     class to handle instance-wise adversarial attacks
     """
-    def __init__(model: torch.Tensor, epsilon: float, alpha: float, min_val: float, max_val: float, n: int):
+    def __init__(self, model: torch.nn.Module, epsilon: float, alpha: float, min_val: float, max_val: float, n: int, temperature=1.0):
+        """
+        Parameters
+        ----------
+        model :
+            model with linear classifier
+        epsilon :
+            maximum magnitude of perturbation
+        alpha: 
+            learning rate
+        min_val : 
+            minimum pixel value
+        max_val :
+            maximum pixel value
+        n :
+            number of iterations
+        temperature : float, optional
+            temperature parameters for logits, default 1.0
+
+        Returns
+        -------
+        None
+        """
         self.model = model
         self.epsilon = epsilon
         self.alpha = alpha
         self.min_val = min_val
         self.max_val = max_val
         self.n = n
+        self.temperature = temperature
     
     def get_adversarial_example(self, imgs: torch.Tensor, target: torch.Tensor, perturb=True):
         """
@@ -140,28 +165,32 @@ class InstanceAdversary(object):
         torch.Tensor
             original image perturbed by gradient of loss wrt target samples
         """
+        # copy inputs and appy perturbation
         adv = imgs.clone()
-
         if perturb:
-            adv = perturb_img(adv, epsilon, min_val, max_val)
+            adv = perturb_img(adv, self.epsilon, self.min_val, self.max_val)
+
+        # apply gradients
+        adv.requires_grad = True
 
         self.model.eval()
         with torch.enable_grad():
-            for _ in range(n):
+            for _ in range(self.n):
                 self.model.zero_grad()
                 # get loss
-                loss = 1-F.cosine_similarity(self.model(adv), self.model(target)).mean()
-                
+                logits = self.model(torch.cat([adv, target]))
+                loss = NT_xent_loss(logits, self.temperature)
+
                 # get gradient of loss for image
-                grad = torch.autograd.grad(loss, x, only_inputs=True, retain_graph=False)
+                grad = torch.autograd.grad(loss, adv, only_inputs=True, retain_graph=False)
                 grad = torch.sign(grad[0])
 
                 # step
-                adv += self.alpha * grad
-                adv = adv.clamp(min_val, max_val)
+                adv = adv + self.alpha * grad
+                adv = adv.clamp(self.min_val, self.max_val)
                 adv = project(adv, imgs, self.epsilon)
     
-    return adv.detach()
+        return adv.detach()
 
     def get_adversarial_loss(self, imgs: torch.Tensor, target: torch.Tensor, optimizer: torch.optim.Optimizer, perturb=True):
         """
@@ -181,12 +210,13 @@ class InstanceAdversary(object):
         torch.Tensor
             loss of the adversarial input wrt target samples
         """
+        # get adversarial examples
         adv = self.get_adversarial_example(imgs, target, perturb)
         
         self.model.train()
-        optimizer.zero_grad()
+        # optimizer.zero_grad()
         
-        batch_size = imgs.shape[0]
-        sim = F.cosine_similarity(model(adv), model(target)).sum() / batch_size
-
-        return 1 - sim
+        # get loss
+        logits = self.model(torch.cat([adv, target]))
+        loss = NT_xent_loss(logits, self.temperature)
+        return loss
