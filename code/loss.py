@@ -32,7 +32,7 @@ def NT_xent_loss(outputs, temperature=1.0, slices=2):
 
     # get logits
     sim_exp = torch.exp(sim)
-    sim_exp = sim * (1 - torch.eye(batch_size, batch_size))
+    sim_exp = sim_exp * (1 - torch.eye(batch_size, batch_size))
     logits = sim_exp / (torch.sum(sim_exp, dim=1).view(batch_size, 1) + epsilon)
     
     n = batch_size // slices

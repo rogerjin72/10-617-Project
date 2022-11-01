@@ -73,9 +73,9 @@ def train(epoch):
             attack_target = inputs_2
 
         if 'Rep' in args.advtrain_type :
-            adv_loss = Rep.get_adversarial_loss(imgs = inputs_1, target = attack_target, optimizer = optimizer)
+            adv_loss = args.lamda * Rep.get_adversarial_loss(imgs = inputs_1, target = attack_target, optimizer = optimizer)
             advinputs = Rep.get_adversarial_example(imgs = inputs_1, target = attack_target)
-            reg_loss += args.lamda * adv_loss.data
+            reg_loss += adv_loss.data
 
         if not (args.advtrain_type == 'None'):
             inputs = torch.cat((inputs_1, inputs_2, advinputs))
@@ -113,6 +113,22 @@ def train(epoch):
 ##### Training #####
 for epoch in range(0, args.epoch):
     train_loss, reg_loss = train(epoch)
+    
+    # Save checkpoint.
+    print('Saving..')
+    state = {
+        'epoch': epoch,
+        'model': model.state_dict(),
+        'optimizer_state' : optimizer.state_dict(),
+        'rng_state': torch.get_rng_state()
+    }
+
+    save_name = './checkpoint/ckpt.t7' + args.name + '_' + str(args.seed)
+
+    if not os.path.isdir('./checkpoint'):
+        os.mkdir('./checkpoint')
+    torch.save(state, save_name)
+    
     with open(logname, 'a') as logfile:
         logwriter = csv.writer(logfile, delimiter=',')
         logwriter.writerow([epoch, train_loss.item(), reg_loss.item()])
