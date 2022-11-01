@@ -214,7 +214,7 @@ class InstanceAdversary(object):
         adv = self.get_adversarial_example(imgs, target, perturb)
         
         self.model.train()
-        # optimizer.zero_grad()
+        optimizer.zero_grad()
         
         # get loss
         logits = self.model(torch.cat([adv, target]))
