@@ -5,9 +5,30 @@ from loss import NT_xent_loss
 
 
 def project(adv: torch.Tensor, orig: torch.Tensor, epsilon: float):
+    """
+    constrains perturbation to within epsilon ball of the original input
+
+    Parameters
+    ----------
+    adv : 
+        adversarially perturbed images
+    orig : 
+        original images
+    epsilon :
+        radius of ball
+
+    Return
+    ------
+    torch.Tensor : 
+        bounded adversarial inputs
+    """
+    # get epsilon bounds for original image
     max_x = orig + epsilon
     min_x = orig - epsilon
+
     prev = adv.clone()
+
+    # bound adversarial input
     adv = torch.max(torch.min(adv, max_x), min_x)
     return adv
 
@@ -155,8 +176,8 @@ class InstanceAdversary(object):
         ---------
         imgs :
             input images
-        labels : 
-            labels for images
+        target : 
+            target images
         perturb : bool, optional
             adds random noise to images, default True
 
@@ -198,8 +219,8 @@ class InstanceAdversary(object):
         ---------
         imgs :
             input images
-        labels : 
-            labels for images
+        target : 
+            target images
         optimizer : 
             optimizer for training
         perturb : bool, optional
@@ -214,7 +235,7 @@ class InstanceAdversary(object):
         adv = self.get_adversarial_example(imgs, target, perturb)
         
         self.model.train()
-        # optimizer.zero_grad()
+        optimizer.zero_grad()
         
         # get loss
         logits = self.model(torch.cat([adv, target]))
