@@ -131,7 +131,7 @@ def parser():
 
     ##### arguments for distributted parallel #####
     parser.add_argument('--local_rank', type=int, default=0)   
-    parser.add_argument('--ngpu', type=int, default=2)
+    parser.add_argument('--ngpu', type=int, default=1)
 
     ##### arguments for PGD attack & Adversarial Training #####
     parser.add_argument('--min', type=float, default=0.0, help='min for cliping image')

@@ -73,19 +73,21 @@ def train(epoch):
             attack_target = inputs_2
 
         if 'Rep' in args.advtrain_type :
-            adv_loss = args.lamda * Rep.get_adversarial_loss(imgs = inputs_1, target = attack_target, optimizer = optimizer)
+            adv_loss = Rep.get_adversarial_loss(imgs = inputs_1, target = attack_target, optimizer = optimizer) * 1.0 / args.lamda
             advinputs = Rep.get_adversarial_example(imgs = inputs_1, target = attack_target)
             reg_loss += adv_loss.data
 
         if not (args.advtrain_type == 'None'):
             inputs = torch.cat((inputs_1, inputs_2, advinputs))
+            slices = 3
         else:
             inputs = torch.cat((inputs_1, inputs_2))
+            slices = 2
         
         outputs = model(inputs)
         # similarity, gathered_outputs = pairwise_similarity(outputs, temperature=args.temperature, multi_gpu=multi_gpu, adv_type = args.advtrain_type) 
                 
-        simloss  = NT_xent_loss(outputs, temperature=args.temperature) #, args.advtrain_type)
+        simloss  = NT_xent_loss(outputs, temperature=args.temperature, slices=slices) #, args.advtrain_type)
         
         if not (args.advtrain_type=='None'):
             loss = simloss + adv_loss
@@ -101,11 +103,11 @@ def train(epoch):
 
         if 'Rep' in args.advtrain_type:
             print(batch_idx, len(trainloader),
-                            'Loss: %.3f | SimLoss: %.3f | Adv: %.2f'
+                            'Loss: %.3f | SimLoss: %.3f | Adv: %.4f'
                             % (total_loss / (batch_idx + 1), reg_simloss / (batch_idx + 1), reg_loss / (batch_idx + 1)))
         else:
             print(batch_idx, len(trainloader),
-                        'Loss: %.3f | Adv: %.3f'
+                        'Loss: %.3f | Adv: %.4f'
                         % (total_loss/(batch_idx+1), reg_simloss/(batch_idx+1)))
         
     return (total_loss/batch_idx, reg_simloss/batch_idx)

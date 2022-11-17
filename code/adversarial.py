@@ -52,7 +52,7 @@ def perturb_img(imgs: torch.Tensor, epsilon: float, min_val: float, max_val: flo
     -------
     torch.Tensor
     """
-    noise = torch.zeros(imgs.shape).uniform_(-epsilon, epsilon)
+    noise = torch.zeros(imgs.shape).uniform_(-epsilon, epsilon).cuda()
     imgs += noise
     return imgs.clamp(min_val, max_val)
 

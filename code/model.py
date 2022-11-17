@@ -17,7 +17,8 @@ class Projector(nn.Module):
         return output
 
 def ResNet18(num_classes, contrastive_learning):
-    model = models.resnet18(weights='ResNet18_Weights.IMAGENET1K_V1')
+    # weights = models.ResNet18_Weights
+    model = models.resnet18(pretrained=True)
     if contrastive_learning:
         model.fc = Projector(expansion=1)
     else:

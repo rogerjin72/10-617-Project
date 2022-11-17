@@ -1,0 +1,11 @@
+conda create --name project python=3.10 pandas numpy scipy matplotlib scikit-learn
+conda install pytorch torchvision torchaudio pytorch-cuda=11.7 -c pytorch -c nvidia
+conda install gpustat
+pip install Pillow==6.1
+pip install diffdist torchsummary
+pip install git+https://github.com/ildoonet/pytorch-gradual-warmup-lr.git
+pip install opencv-python
+
+mkdir dataset
+wget https://www.cs.toronto.edu/~kriz/cifar-10-python.tar.gz
+tar -xvf cifar-10-python.tar.gz

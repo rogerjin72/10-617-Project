@@ -23,8 +23,7 @@ from loss import pairwise_similarity, NT_xent
 from warmup_scheduler import GradualWarmupScheduler
 
 args = parser()
-args.use_cuda = False
-args.local_rank = 0
+args.use_cuda = True
 
 def print_status(string):
     if args.use_cuda and args.local_rank % ngpus_per_node == 0:
@@ -32,8 +31,10 @@ def print_status(string):
 
 ngpus_per_node = torch.cuda.device_count()
 if args.ngpu>1:
+    print("MULTI GPU")
     multi_gpu=True
 elif args.ngpu==1:
+    print("SINGLE GPU")
     multi_gpu=False
 else:
     assert("Need GPU....")
@@ -46,12 +47,12 @@ if args.seed != 0:
     torch.manual_seed(args.seed)
 
 world_size = args.ngpu
-# torch.distributed.init_process_group(
-#     'nccl',
-#     init_method='env://',
-#     world_size=world_size,
-#     rank=args.local_rank,
-# )
+torch.distributed.init_process_group(
+    'nccl',
+    init_method='env://',
+    world_size=world_size,
+    rank=args.local_rank,
+)
 
 # Data
 print_status('==> Preparing data..')
@@ -171,11 +172,11 @@ def train(epoch):
         if (args.local_rank % ngpus_per_node == 0):
             if 'Rep' in args.advtrain_type:
                 progress_bar(batch_idx, len(trainloader),
-                             'Loss: %.3f | SimLoss: %.3f | Adv: %.2f'
+                             'Loss: %.3f | SimLoss: %.3f | Adv: %.4f'
                              % (total_loss / (batch_idx + 1), reg_simloss / (batch_idx + 1), reg_loss / (batch_idx + 1)))
             else:
                 progress_bar(batch_idx, len(trainloader),
-                         'Loss: %.3f | Adv: %.3f'
+                         'Loss: %.3f | Adv: %.4f'
                          % (total_loss/(batch_idx+1), reg_simloss/(batch_idx+1)))
         
     return (total_loss/batch_idx, reg_simloss/batch_idx)

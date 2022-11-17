@@ -52,7 +52,7 @@ def get_args():
     parser.add_argument('--random_start', type=bool, default=True,
         help='True for PGD')
     parser.add_argument('--num_workers', type=int, default=0, help='number of workers for dataloader')
-    parser.add_argument('--use_cuda', type=bool, default=False, help='use cuda or not')
+    parser.add_argument('--use_cuda', type=bool, default=True, help='use cuda or not')
     
     args = parser.parse_args()
 
