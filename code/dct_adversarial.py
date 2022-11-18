@@ -1,63 +1,74 @@
 import torch
+import numpy as np
 import torch.nn.functional as F 
 
 from loss import NT_xent_loss
+from adversarial import project, perturb_img
 
-
-def project(adv: torch.Tensor, orig: torch.Tensor, epsilon: float):
+def dct(im: torch.Tensor):
     """
-    constrains perturbation to within epsilon ball of the original input
+    Type II discrete cosine transform
 
     Parameters
     ----------
-    adv : 
-        adversarially perturbed images
-    orig : 
-        original images
-    epsilon :
-        radius of ball
-
-    Return
-    ------
-    torch.Tensor : 
-        bounded adversarial inputs
-    """
-    # get epsilon bounds for original image
-    max_x = orig + epsilon
-    min_x = orig - epsilon
-
-    prev = adv.clone()
-
-    # bound adversarial input
-    adv = torch.max(torch.min(adv, max_x), min_x)
-    return adv
-
-
-def perturb_img(imgs: torch.Tensor, epsilon: float, min_val: float, max_val: float):
-    """
-    add noise to image
-
-    Parameters
-    ----------
-    imgs :
-        input images
-    epsilon :
-        max absolute value of noise
-    min_val : 
-        minimum pixel value
-    max_val :
-        maximum pixel value
+    im : 
+        input image, shape B, C, H, W
     
     Returns
     -------
-    torch.Tensor
+    torch.Tensor:
+        transformed image using DCT
     """
-    noise = torch.zeros(imgs.shape).uniform_(-epsilon, epsilon).cuda()
-    imgs += noise
-    return imgs.clamp(min_val, max_val)
+    b, c, h, w = im.shape
+
+    # get indices
+    cols = torch.arange(h).repeat(h).reshape(h, h)
+    rows = cols.T
+    index = rows * (2 * cols + 1) * np.pi / 2 / h
+    
+    # create dct matrix
+    dct_mat = np.sqrt(2 / h) * torch.cos(index)
+    dct_mat[0, :] = dct_mat[0, : ] / np.sqrt(2)
+
+    # apply transformation
+    transformed = torch.matmul(im, dct_mat.T)
+    transformed = torch.matmul(dct_mat, transformed)
+    
+    return transformed
 
 
-class FGSM(object):
+def inv_dct(im):
+    """
+    Type III discrete cosine transform
+
+    Parameters
+    ----------
+    im : 
+        input image, shape B, C, H, W
+    
+    Returns
+    -------
+    torch.Tensor:
+        transformed image using inverse DCT
+    """
+    b, c, h, w = im.shape
+
+    # get indices
+    cols = torch.arange(h).repeat(h).reshape(h, h)
+    rows = cols.T
+    index = cols * (2 * rows + 1) * np.pi / 2 / h
+
+    # create inverse dct matrix
+    inv_dct_mat = np.sqrt(2 / h) * torch.cos(index)
+    inv_dct_mat[:, 0] = 1.0 / np.sqrt(h)
+
+    # apply transformation
+    transformed = torch.matmul(im, inv_dct_mat.T)
+    transformed = torch.matmul(inv_dct_mat, transformed)
+    return transformed
+
+
+class DCTFGSM(object):
     """
     class to handle fast gradient sign adversarial attacks
     """
@@ -111,6 +122,9 @@ class FGSM(object):
         if perturb:
             adv = perturb_img(adv, self.epsilon, self.min_val, self.max_val)
         
+        adv = dct(adv)
+        orig = adv.clone()
+
         # apply gradients
         adv.requires_grad = True
 
@@ -118,8 +132,10 @@ class FGSM(object):
         with torch.enable_grad():
             for _ in range(self.n):
                 self.model.zero_grad()
+                inp = inv_dct(adv)
+
                 # compute loss
-                logits = self.model(adv)
+                logits = self.model(inp)
                 loss = F.cross_entropy(logits, labels)
 
                 # get gradient of loss for image
@@ -128,16 +144,12 @@ class FGSM(object):
 
                 # step
                 adv = adv + self.alpha * grad
-                adv = adv.clamp(min_val, max_val)
-                adv = project(adv, imgs, self.epsilon)
+                adv = project(adv, orig, self.epsilon)
     
-        return adv.detach()
+        adv_img = inv_dct(adv)
+        return adv_img.detach()
 
-
-class InstanceAdversary(object):
-    """
-    class to handle instance-wise adversarial attacks
-    """
+class DCTAdversary(object):
     def __init__(self, model: torch.nn.Module, epsilon: float, alpha: float, min_val: float, max_val: float, n: int, temperature=1.0):
         """
         Parameters
@@ -168,7 +180,7 @@ class InstanceAdversary(object):
         self.max_val = max_val
         self.n = n
         self.temperature = temperature
-    
+
     def get_adversarial_example(self, imgs: torch.Tensor, target: torch.Tensor, perturb=True):
         """
         Parmeters
@@ -190,6 +202,9 @@ class InstanceAdversary(object):
         if perturb:
             adv = perturb_img(adv, self.epsilon, self.min_val, self.max_val)
 
+        adv = dct(adv)
+        orig = adv.clone()
+
         # apply gradients
         adv.requires_grad = True
 
@@ -198,19 +213,21 @@ class InstanceAdversary(object):
             for _ in range(self.n):
                 self.model.zero_grad()
                 # get loss
-                logits = self.model(torch.cat([adv, target]))
+                inp = inv_dct(adv)
+                logits = self.model(torch.cat([inp, target]))
                 loss = NT_xent_loss(logits, self.temperature)
 
-                # get gradient of loss for image
+                # get gradient of loss for image in dct space
                 grad = torch.autograd.grad(loss, adv, only_inputs=True, retain_graph=False)
                 grad = torch.sign(grad[0])
 
                 # step
                 adv = adv + self.alpha * grad
-                adv = adv.clamp(self.min_val, self.max_val)
-                adv = project(adv, imgs, self.epsilon)
-    
-        return adv.detach()
+                # adv = adv.clamp(self.min_val, self.max_val)
+                adv = project(adv, orig, self.epsilon)
+
+        adv_img = inv_dct(adv)
+        return adv_img.detach()
 
     def get_adversarial_loss(self, imgs: torch.Tensor, target: torch.Tensor, optimizer: torch.optim.Optimizer, perturb=True):
         """
