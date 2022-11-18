@@ -29,7 +29,7 @@ def dct(im: torch.Tensor):
     # create dct matrix
     dct_mat = np.sqrt(2 / h) * torch.cos(index)
     dct_mat[0, :] = dct_mat[0, : ] / np.sqrt(2)
-
+    
     # apply transformation
     transformed = torch.matmul(im, dct_mat.T)
     transformed = torch.matmul(dct_mat, transformed)
@@ -61,16 +61,18 @@ def inv_dct(im):
     # create inverse dct matrix
     inv_dct_mat = np.sqrt(2 / h) * torch.cos(index)
     inv_dct_mat[:, 0] = 1.0 / np.sqrt(h)
+    inv_dct_mat.requires_grad = True
 
     # apply transformation
     transformed = torch.matmul(im, inv_dct_mat.T)
     transformed = torch.matmul(inv_dct_mat, transformed)
+
     return transformed
 
 
 class DCTFGSM(object):
     """
-    class to handle fast gradient sign adversarial attacks
+    class to handle fast gradient sign adversarial attacks in dct space
     """
     def __init__(self, model: torch.nn.Module, epsilon: float, min_val: float, max_val: float, alpha: float, n: int):
         """
@@ -82,10 +84,6 @@ class DCTFGSM(object):
             maximum magnitude of perturbation
         alpha: 
             learning rate
-        min_val : 
-            minimum pixel value
-        max_val :
-            maximum pixel value
         n :
             number of iterations
 
@@ -95,8 +93,6 @@ class DCTFGSM(object):
         """
         self.model = model
         self.epsilon = epsilon
-        self.min_val = min_val
-        self.max_val = max_val
         self.alpha = alpha
         self.n = n
 
@@ -120,7 +116,7 @@ class DCTFGSM(object):
         adv = imgs.clone()
 
         if perturb:
-            adv = perturb_img(adv, self.epsilon, self.min_val, self.max_val)
+            adv = perturb_img(adv, self.epsilon, 0, 256)
         
         adv = dct(adv)
         orig = adv.clone()
@@ -150,7 +146,7 @@ class DCTFGSM(object):
         return adv_img.detach()
 
 class DCTAdversary(object):
-    def __init__(self, model: torch.nn.Module, epsilon: float, alpha: float, min_val: float, max_val: float, n: int, temperature=1.0):
+    def __init__(self, model: torch.nn.Module, epsilon: float, alpha: float, n: int, temperature=1.0):
         """
         Parameters
         ----------
@@ -160,10 +156,6 @@ class DCTAdversary(object):
             maximum magnitude of perturbation
         alpha: 
             learning rate
-        min_val : 
-            minimum pixel value
-        max_val :
-            maximum pixel value
         n :
             number of iterations
         temperature : float, optional
@@ -176,8 +168,6 @@ class DCTAdversary(object):
         self.model = model
         self.epsilon = epsilon
         self.alpha = alpha
-        self.min_val = min_val
-        self.max_val = max_val
         self.n = n
         self.temperature = temperature
 
@@ -195,12 +185,12 @@ class DCTAdversary(object):
         Returns
         -------
         torch.Tensor
-            original image perturbed by gradient of loss wrt target samples
+            original image perturbed in the dct space by gradient of loss wrt target samples
         """
-        # copy inputs and appy perturbation
+        # copy inputs and apply perturbation
         adv = imgs.clone()
         if perturb:
-            adv = perturb_img(adv, self.epsilon, self.min_val, self.max_val)
+            adv = perturb_img(adv, self.epsilon, 0, 256)
 
         adv = dct(adv)
         orig = adv.clone()
@@ -214,6 +204,8 @@ class DCTAdversary(object):
                 self.model.zero_grad()
                 # get loss
                 inp = inv_dct(adv)
+                inp.retain_grad()
+
                 logits = self.model(torch.cat([inp, target]))
                 loss = NT_xent_loss(logits, self.temperature)
 
@@ -223,7 +215,6 @@ class DCTAdversary(object):
 
                 # step
                 adv = adv + self.alpha * grad
-                # adv = adv.clamp(self.min_val, self.max_val)
                 adv = project(adv, orig, self.epsilon)
 
         adv_img = inv_dct(adv)

@@ -128,7 +128,7 @@ class FGSM(object):
 
                 # step
                 adv = adv + self.alpha * grad
-                adv = adv.clamp(min_val, max_val)
+                adv = adv.clamp(self.min_val, self.max_val)
                 adv = project(adv, imgs, self.epsilon)
     
         return adv.detach()
