@@ -66,6 +66,8 @@ print_status('==> Building model..')
 if args.use_cuda:
     torch.cuda.set_device(args.local_rank)
 model = model_loader.get_model(args)
+from torchsummary import summary
+summary(model.cuda(), (3, 32, 32))
 
 if args.model=='ResNet18':
     expansion=1
@@ -74,6 +76,7 @@ elif args.model=='ResNet50':
 else:
     assert('wrong model type')
 projector = Projector(expansion=expansion)
+summary(projector.cuda(), (1, 512))
 
 if 'Rep' in args.advtrain_type:
     Rep_info = 'Rep_attack_ep_'+str(args.epsilon)+'_alpha_'+ str(args.alpha) + '_min_val_' + str(args.min) + '_max_val_' + str(args.max) + '_max_iters_' + str(args.k) + '_type_' + str(args.attack_type) + '_randomstart_' + str(args.random_start)
@@ -153,6 +156,7 @@ def train(epoch):
             inputs = torch.cat((inputs_1, inputs_2))
         
         outputs = projector(model(inputs))
+        print(inputs, outputs)
         similarity, gathered_outputs = pairwise_similarity(outputs, temperature=args.temperature, multi_gpu=multi_gpu, adv_type = args.advtrain_type) 
         
         simloss  = NT_xent(similarity, args.advtrain_type)

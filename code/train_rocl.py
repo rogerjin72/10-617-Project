@@ -6,6 +6,7 @@ import torch
 import torch.optim as optim
 from warmup_scheduler import GradualWarmupScheduler # pip install git+https://github.com/ildoonet/pytorch-gradual-warmup-lr.git
 from loss import NT_xent_loss
+from torchsummary import summary
 
 args = get_args()
 #load data
@@ -13,10 +14,12 @@ trainloader, traindst, testloader, testdst = data_loader.get_dataset(args)
 
 #load model
 if 'contrastive' in args.train_type or 'linear_eval' in args.train_type:
-        contrastive_learning = True  
+    print("Contrastive")
+    contrastive_learning = True  
 else:
     contrastive_learning = False
 model = ResNet18(10, contrastive_learning)
+summary(model.cuda(), (3, 32, 32))
 print('ResNet18 is loading ...')
 
 # to GPU
@@ -73,8 +76,8 @@ def train(epoch):
             attack_target = inputs_2
 
         if 'Rep' in args.advtrain_type :
-            adv_loss = Rep.get_adversarial_loss(imgs = inputs_1, target = attack_target, optimizer = optimizer) * 1.0 / args.lamda
             advinputs = Rep.get_adversarial_example(imgs = inputs_1, target = attack_target)
+            adv_loss = Rep.get_adversarial_loss(imgs = inputs_1, target = attack_target, optimizer = optimizer) * 1.0 / args.lamda
             reg_loss += adv_loss.data
 
         if not (args.advtrain_type == 'None'):
@@ -85,6 +88,7 @@ def train(epoch):
             slices = 2
         
         outputs = model(inputs)
+        # print(inputs, outputs)
         # similarity, gathered_outputs = pairwise_similarity(outputs, temperature=args.temperature, multi_gpu=multi_gpu, adv_type = args.advtrain_type) 
                 
         simloss  = NT_xent_loss(outputs, temperature=args.temperature, slices=slices) #, args.advtrain_type)
