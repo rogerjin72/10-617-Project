@@ -74,7 +74,7 @@ class DCTFGSM(object):
     """
     class to handle fast gradient sign adversarial attacks in dct space
     """
-    def __init__(self, model: torch.nn.Module, epsilon: float, min_val: float, max_val: float, alpha: float, n: int):
+    def __init__(self, model: torch.nn.Module, epsilon: float, alpha: float, n: int):
         """
         Parameters
         ----------
@@ -97,15 +97,15 @@ class DCTFGSM(object):
         self.n = n
 
 
-    def get_adversarial_example(self, imgs: torch.Tensor, labels: torch.Tensor, perturb=True):
+    def get_adversarial_example(self, imgs: torch.Tensor, labels: torch.Tensor=None, perturb: bool=True):
         """
         Parmeters
         ---------
         imgs :
             input images
-        labels : 
-            labels for images
-        perturb : bool, optional
+        labels : optional
+            labels for images, default None
+        perturb : optional
             adds random noise to images, default True
 
         Returns
@@ -114,6 +114,9 @@ class DCTFGSM(object):
             original image perturbed by the fast gradient sign method
         """
         adv = imgs.clone()
+        
+        if labels is None:
+            labels = self.model(imgs).argmax(axis=1)
 
         if perturb:
             adv = perturb_img(adv, self.epsilon, 0, 256)

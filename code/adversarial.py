@@ -90,14 +90,14 @@ class FGSM(object):
         self.n = n
 
 
-    def get_adversarial_example(self, imgs: torch.Tensor, labels: torch.Tensor, perturb=True):
+    def get_adversarial_example(self, imgs: torch.Tensor, labels: torch.Tensor=None, perturb=True):
         """
         Parmeters
         ---------
         imgs :
             input images
-        labels : 
-            labels for images
+        labels : optional
+            labels for images, default None
         perturb : bool, optional
             adds random noise to images, default True
 
@@ -108,6 +108,9 @@ class FGSM(object):
         """
         adv = imgs.clone()
 
+        if labels is None:
+            labels = self.model(imgs).argmax(axis=1)
+
         if perturb:
             adv = perturb_img(adv, self.epsilon, self.min_val, self.max_val)
         
@@ -117,6 +120,7 @@ class FGSM(object):
         self.model.eval()
         with torch.enable_grad():
             for _ in range(self.n):
+                print(_)
                 self.model.zero_grad()
                 # compute loss
                 logits = self.model(adv)
