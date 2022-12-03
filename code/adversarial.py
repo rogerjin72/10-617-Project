@@ -120,7 +120,6 @@ class FGSM(object):
         self.model.eval()
         with torch.enable_grad():
             for _ in range(self.n):
-                print(_)
                 self.model.zero_grad()
                 # compute loss
                 logits = self.model(adv)
