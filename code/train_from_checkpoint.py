@@ -125,21 +125,22 @@ def train(epoch):
 for epoch in range(start_epoch, args.epoch):
     train_loss, reg_loss = train(epoch)
     
-    # Save checkpoint.
-    print('Saving..')
-    state = {
-        'epoch': epoch,
-        'model': model.state_dict(),
-        'optimizer_state' : optimizer.state_dict(),
-        'rng_state': torch.get_rng_state()
-    }
+    if (epoch + 1 % 50) == 0:
+        # Save checkpoint.
+        print('Saving..')
+        state = {
+            'epoch': epoch,
+            'model': model.state_dict(),
+            'optimizer_state' : optimizer.state_dict(),
+            'rng_state': torch.get_rng_state()
+        }
 
-    save_name = './checkpoint/ckpt.t7' + args.name + '_' + str(args.seed)
+        save_name = './checkpoint/ckpt.t7' + args.name + '_' + str(args.seed)
 
-    if not os.path.isdir('./checkpoint'):
-        os.mkdir('./checkpoint')
-    torch.save(state, save_name)
-    
+        if not os.path.isdir('./checkpoint'):
+            os.mkdir('./checkpoint')
+        torch.save(state, save_name)
+        
     with open(logname, 'a') as logfile:
         logwriter = csv.writer(logfile, delimiter=',')
         logwriter.writerow([epoch, train_loss.item(), reg_loss.item()])
