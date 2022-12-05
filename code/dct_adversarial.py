@@ -149,12 +149,14 @@ class DCTFGSM(object):
         return adv_img.detach()
 
 class DCTAdversary(object):
-    def __init__(self, model: torch.nn.Module, epsilon: float, alpha: float, n: int, temperature=1.0):
+    def __init__(self, model: torch.nn.Module, linear: torch.nn.Module, epsilon: float, alpha: float, n: int, temperature=1.0):
         """
         Parameters
         ----------
         model :
-            model with linear classifier
+            model
+        linear : 
+            linear classifier for model
         epsilon :
             maximum magnitude of perturbation
         alpha: 

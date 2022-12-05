@@ -95,6 +95,7 @@ def get_args_linear_eval():
     parser.add_argument('--ngpu', type=int, default=1)
     
     ##### arguments for PGD attack & Adversarial Training #####
+    parser.add_argument('--dct', type=bool, default=False, help='apply DCT transformation')
     parser.add_argument('--min', type=float, default=0.0,
         help='min for cliping image')
     parser.add_argument('--max', type=float, default=1.0,
@@ -111,6 +112,52 @@ def get_args_linear_eval():
     parser.add_argument('--random_start', type=bool, default=True,
         help='True for PGD')
     parser.add_argument('--num_workers', type=int, default=0, help='number of workers for dataloader')
+    args = parser.parse_args()
+
+    return args
+
+
+def get_adversarial_eval():
+    parser = argparse.ArgumentParser(description='Adversarial Eval')
+
+    ##### arguments for RoCL Linear eval (LE) or Robust Linear eval (r-LE)#####
+    parser.add_argument('--trans', default=False, type=bool, help='use transformed sample')
+    parser.add_argument('--clean', default=False, type=bool, help='use clean sample')
+    parser.add_argument('--adv_img', default=False, type=bool, help='use adversarial sample')
+    parser.add_argument('-- dct', default=False, type=bool, help='apply dct transformation')
+    
+    ##### arguments for training #####
+    parser.add_argument('--lr', default=0.2, type=float, help='learning rate')    
+    parser.add_argument('--dataset', default='cifar-10', type=str, help='cifar-10/cifar-100')
+    parser.add_argument('--load_checkpoint', default='./checkpoint/ckpt.t7one_task_0', type=str, help='PATH TO CHECKPOINT')
+    parser.add_argument('--model', default="ResNet18", type=str,
+                        help='model type ResNet18/ResNet50')
+
+    parser.add_argument('--name', default='', type=str, help='name of run')
+    parser.add_argument('--batch-size', default=128, type=int, help='batch size / multi-gpu setting: batch per gpu')
+
+    ##### arguments for data augmentation #####
+    parser.add_argument('--color_jitter_strength', default=0.5, type=float, help='0.5 for CIFAR')
+    parser.add_argument('--temperature', default=0.5, type=float, help='temperature for pairwise-similarity')
+
+    ##### arguments for distributted parallel #####
+    parser.add_argument('--local_rank', type=int, default=0)   
+    parser.add_argument('--ngpu', type=int, default=1)
+    
+    ##### arguments for PGD attack & Adversarial Training #####
+    parser.add_argument('--min', type=float, default=0.0,
+        help='min for cliping image')
+    parser.add_argument('--max', type=float, default=1.0,
+        help='max for cliping image')
+    parser.add_argument('--attack_type', type=str, default='linf',
+        help='adversarial l_p')
+    parser.add_argument('--epsilon', type=float, default=0.0314,
+        help='maximum perturbation of adversaries (8/255 for cifar-10)')
+    parser.add_argument('--alpha', type=float, default=0.007,
+        help='movement multiplier per iteration when generating adversarial examples (2/255=0.00784)')
+    parser.add_argument('--k', type=int, default=10,
+        help='maximum iteration when generating adversarial examples')
+    
     args = parser.parse_args()
 
     return args

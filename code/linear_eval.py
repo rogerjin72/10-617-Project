@@ -25,6 +25,7 @@ from args import get_args_linear_eval
 # from utils import progress_bar, checkpoint
 from collections import OrderedDict
 from adversarial import FGSM
+from dct_adversarial import DCTFGSM
 from loss import NT_xent_loss
 
 args = get_args_linear_eval()
@@ -133,9 +134,10 @@ def load(args, epoch):
         attack_info = 'Adv_train_epsilon_'+str(args.epsilon)+'_alpha_'+ str(args.alpha) + '_min_val_' + str(args.min) + '_max_val_' + str(args.max) + '_max_iters_' + str(args.k) + '_type_' + str(args.attack_type) + '_randomstart_' + str(args.random_start)
         print_status("Adversarial training info...")
         print_status(attack_info)
-
-        attacker = FastGradientSignUntargeted(model, linear=Linear, epsilon=args.epsilon, alpha=args.alpha, min_val=args.min, max_val=args.max, max_iters=args.k, _type=args.attack_type)
-
+        if not args.dct:
+            attacker = FGSM(model, linear=Linear, epsilon=args.epsilon, alpha=args.alpha, min_val=args.min, max_val=args.max, n=args.k)
+        else:
+            attacker = DCTFGSM(model, linear=Linear,epsilon=args.epsilon, alpha=args.alpha, n=args.k)
     if args.adv_img:
         if args.ss:
             return model, Linear, projector, loptim, attacker

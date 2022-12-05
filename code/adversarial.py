@@ -61,12 +61,14 @@ class FGSM(object):
     """
     class to handle fast gradient sign adversarial attacks
     """
-    def __init__(self, model: torch.nn.Module, epsilon: float, min_val: float, max_val: float, alpha: float, n: int):
+    def __init__(self, model: torch.nn.Module, linear: torch.nn.Module, epsilon: float, min_val: float, max_val: float, alpha: float, n: int):
         """
         Parameters
         ----------
         model :
-            model with linear classifier
+            model
+        linear : 
+            linear classifier for model
         epsilon :
             maximum magnitude of perturbation
         alpha: 
