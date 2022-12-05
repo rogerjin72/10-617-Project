@@ -314,6 +314,19 @@ for epoch in range(args.epoch):
         with open(logname, 'a') as logfile:
             logwriter = csv.writer(logfile, delimiter=',')
             logwriter.writerow([epoch, train_acc, test_acc])
+    state = {
+        'epoch': epoch,
+        'model': model.state_dict(),
+        'linear_layer': linear.state_dict(),
+        'optimizer_state' : loptim.state_dict(),
+        'rng_state': torch.get_rng_state()
+    }
+
+    save_name = './checkpoint/ckpt.t7' + args.name + '_' + str(args.seed)
+
+    if not os.path.isdir('./checkpoint'):
+        os.mkdir('./checkpoint')
+    torch.save(state, save_name)
 
 checkpoint(model, test_acc, args.epoch, args, loptim)
 checkpoint(linear, test_acc, args.epoch, args, loptim, save_name_add='_linear')
