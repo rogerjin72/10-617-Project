@@ -171,7 +171,7 @@ def linear_train(epoch, model, Linear, projector, loptim, attacker=None):
             inputs = ori
 
         if args.adv_img:
-            advinputs = attacker.perturb(original_images=inputs, labels=target, random_start=args.random_start)
+            advinputs = attacker.get_adversarial_example(imgs=inputs, labels=target)
         
         if args.clean:
             total_inputs = inputs
