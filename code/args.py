@@ -161,3 +161,38 @@ def get_adversarial_eval():
     args = parser.parse_args()
 
     return args
+
+def get_args_test():
+    parser = argparse.ArgumentParser(description='linear eval test')
+    parser.add_argument('--train_type', default='linear_eval', type=str, help='standard')
+    parser.add_argument('--dataset', default='cifar-10', type=str, help='cifar-10/cifar-100')
+    parser.add_argument('--load_checkpoint', default='./checkpoint/ckpt.t7one_task_0', type=str, help='PATH TO CHECKPOINT')
+    parser.add_argument('--model', default='ResNet18', type=str,
+                        help='model type ResNet18/ResNet50')
+    parser.add_argument('--name', default='', type=str, help='name of run')
+    parser.add_argument('--seed', default=2342, type=int, help='random seed')
+    parser.add_argument('--batch-size', default=128, type=int, help='batch size / multi-gpu setting: batch per gpu')
+    
+    ##### arguments for data augmentation #####
+    parser.add_argument('--color_jitter_strength', default=0.5, type=float, help='0.5 for CIFAR, 1.0 for ImageNet')
+    parser.add_argument('--temperature', default=0.5, type=float, help='temperature for pairwise-similarity')
+ 
+    ##### arguments for distributted parallel #####
+    parser.add_argument('--local_rank', type=int, default=0)   
+    parser.add_argument('--ngpu', type=int, default=1)
+    
+    parser.add_argument('--attack_type', type=str, default='linf',
+        help='adversarial l_p')
+    parser.add_argument('--epsilon', type=float, default=0.0314,
+        help='maximum perturbation of adversaries (8/255 for cifar-10)')
+    parser.add_argument('--alpha', type=float, default=0.007,
+        help='movement multiplier per iteration when generating adversarial examples (2/255=0.00784)')
+    parser.add_argument('--k', type=int, default=10,
+        help='maximum iteration when generating adversarial examples')
+    parser.add_argument('--random_start', type=bool, default=True,
+        help='True for PGD')
+    parser.add_argument('--num_workers', type=int, default=0, help='number of workers for dataloader')
+    
+    args = parser.parse_args()
+
+    return args

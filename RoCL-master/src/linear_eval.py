@@ -79,14 +79,14 @@ def load(args, epoch):
     else:
         add = '_epoch_'+str(epoch)
 
-    checkpoint_ = torch.load(args.load_checkpoint+add)
+    # checkpoint_ = torch.load(args.load_checkpoint+add)
 
-    new_state_dict = OrderedDict()
-    for k, v in checkpoint_['model'].items():
-        name = k[7:]
-        new_state_dict[name] = v
+    # new_state_dict = OrderedDict()
+    # for k, v in checkpoint_['model'].items():
+    #     name = k[7:]
+    #     new_state_dict[name] = v
 
-    model.load_state_dict(new_state_dict)
+    # model.load_state_dict(new_state_dict)
     
     if args.ss:
         projector = Projector(expansion=expansion)
