@@ -140,7 +140,7 @@ class FGSM(object):
                 adv = adv.clamp(self.min_val, self.max_val)
                 adv = project(adv, imgs, self.epsilon)
 
-        print(adv.shape)
+        # print(adv.shape)
         return adv.detach()
 
 
