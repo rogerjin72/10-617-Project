@@ -29,6 +29,7 @@ def dct(im: torch.Tensor):
     # create dct matrix
     dct_mat = np.sqrt(2 / h) * torch.cos(index)
     dct_mat[0, :] = dct_mat[0, : ] / np.sqrt(2)
+    dct_mat = dct_mat.cuda()
     
     # apply transformation
     transformed = torch.matmul(im, dct_mat.T)
@@ -62,11 +63,11 @@ def inv_dct(im):
     inv_dct_mat = np.sqrt(2 / h) * torch.cos(index)
     inv_dct_mat[:, 0] = 1.0 / np.sqrt(h)
     inv_dct_mat.requires_grad = True
+    inv_dct_mat = inv_dct_mat.cuda()
 
     # apply transformation
     transformed = torch.matmul(im, inv_dct_mat.T)
     transformed = torch.matmul(inv_dct_mat, transformed)
-
     return transformed
 
 
@@ -140,7 +141,7 @@ class DCTFGSM(object):
 
                 # compute loss
                 logits = self.model(inp)
-                logits = self.linear(inp)
+                logits = self.linear(logits)
                 loss = F.cross_entropy(logits, labels)
 
                 # get gradient of loss for image

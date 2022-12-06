@@ -16,6 +16,7 @@ from model import ResNet18
 from collections import OrderedDict
 
 from adversarial import FGSM
+from dct_adversarial import DCTFGSM
 
 from args import get_args_test
 args = get_args_test()
@@ -88,11 +89,16 @@ if use_cuda:
     print_status('Using CUDA..')
     cudnn.benchmark = True
 
-attack_info = 'epsilon_'+str(args.epsilon)+'_alpha_'+ str(args.alpha) + '_min_val_' + str(0.0) + '_max_val_' + str(1.0) + '_max_iters_' + str(args.k) + '_type_' + str(args.attack_type) + '_randomstart_' + str(args.random_start)
+attack_info = 'epsilon_'+str(args.epsilon)+'_alpha_'+ str(args.alpha) + '_min_val_' + str(0.0) + '_max_val_' + str(1.0) + '_max_iters_' + str(args.k) + '_type_' + str(args.attack_type) + '_randomstart_' + str(args.random_start) + '_dct_' + str(args.dct)
 print_status("Attack information...")
 print_status(attack_info)
-attacker = FGSM(model, Linear, epsilon=args.epsilon, alpha=args.alpha, min_val=0.0, max_val=1.0, n=args.k)
-type
+
+if args.dct:
+    attacker = DCTFGSM(model, Linear, epsilon=args.epsilon, alpha=args.alpha, n=args.k)
+else:
+    attacker = FGSM(model, Linear, epsilon=args.epsilon, alpha=args.alpha, min_val=0.0, max_val=1.0, n=args.k)
+
+
 def test(attacker):
     global best_acc
 

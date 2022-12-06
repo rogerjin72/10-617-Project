@@ -192,7 +192,8 @@ def get_args_test():
     parser.add_argument('--random_start', type=bool, default=True,
         help='True for PGD')
     parser.add_argument('--num_workers', type=int, default=0, help='number of workers for dataloader')
-    
+    parser.add_argument('--dct', type=bool, default=False, help='use DCT transformation')
+
     args = parser.parse_args()
 
     return args
