@@ -112,6 +112,9 @@ def test(attacker):
     clean_acc = 0
     total = 0
 
+    embeds_ori = None
+    embeds_adv = None
+    labels = None
     for idx, (image, label) in enumerate(testloader):
 
         img = image.cuda()
@@ -130,8 +133,17 @@ def test(attacker):
                 test_clean_loss += clean_loss.data
         
         adv_inputs = attacker.get_adversarial_example(imgs=img, labels=y, perturb=args.random_start)
+        
+        out = model(adv_inputs)
+        out_ori = model(img)
+        if embeds_adv is None:
+            embeds_adv = out
+            embeds_ori = out_ori
+        else:
+            embeds_adv = torch.cat((embeds_adv, out))
+            embeds_ori = torch.cat((embeds_ori, out_ori))
             
-        out = Linear(model(adv_inputs))
+        out = Linear(out)
         
         _, predx = torch.max(out.data, 1)
         adv_loss = criterion(out, y)
@@ -145,7 +157,8 @@ def test(attacker):
             print(idx, len(testloader),'Testing Loss {:.3f}, acc {:.3f} , adv Loss {:.3f}, adv acc {:.3f}'.format(test_clean_loss/(idx+1), clean_acc, test_adv_loss/(idx+1), adv_acc))
 
     print ("Test accuracy: {0}/{1}".format(clean_acc, adv_acc))
-
+    torch.save(embeds_adv, f'test_embeds/embeds_adv_{attack_info}_{args.load_checkpoint[11:]}.pt')
+    torch.save(embeds_ori, f'test_embeds/embeds_ori_{attack_info}_{args.load_checkpoint[11:]}.pt')
     return (clean_acc, adv_acc)
 
 test_acc, adv_acc = test(attacker)
