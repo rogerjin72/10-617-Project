@@ -85,6 +85,7 @@ class FGSM(object):
         None
         """
         self.model = model
+        self.linear = linear
         self.epsilon = epsilon
         self.min_val = min_val
         self.max_val = max_val
@@ -123,8 +124,11 @@ class FGSM(object):
         with torch.enable_grad():
             for _ in range(self.n):
                 self.model.zero_grad()
+                self.linear.zero_grad()
+
                 # compute loss
                 logits = self.model(adv)
+                logits = self.linear(logits)
                 loss = F.cross_entropy(logits, labels)
 
                 # get gradient of loss for image

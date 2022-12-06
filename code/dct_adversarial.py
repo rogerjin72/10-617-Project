@@ -74,12 +74,14 @@ class DCTFGSM(object):
     """
     class to handle fast gradient sign adversarial attacks in dct space
     """
-    def __init__(self, model: torch.nn.Module, epsilon: float, alpha: float, n: int):
+    def __init__(self, model: torch.nn.Module, linear: torch.nn.Module, epsilon: float, alpha: float, n: int):
         """
         Parameters
         ----------
         model :
-            model with linear classifier
+            pretrained model 
+        linear : 
+            linear classifier
         epsilon :
             maximum magnitude of perturbation
         alpha: 
@@ -92,6 +94,7 @@ class DCTFGSM(object):
         None
         """
         self.model = model
+        self.linear = linear
         self.epsilon = epsilon
         self.alpha = alpha
         self.n = n
@@ -131,10 +134,13 @@ class DCTFGSM(object):
         with torch.enable_grad():
             for _ in range(self.n):
                 self.model.zero_grad()
+                self.linear.zero_grad()
+                
                 inp = inv_dct(adv)
 
                 # compute loss
                 logits = self.model(inp)
+                logits = self.linear(inp)
                 loss = F.cross_entropy(logits, labels)
 
                 # get gradient of loss for image
@@ -149,7 +155,7 @@ class DCTFGSM(object):
         return adv_img.detach()
 
 class DCTAdversary(object):
-    def __init__(self, model: torch.nn.Module, linear: torch.nn.Module, epsilon: float, alpha: float, n: int, temperature=1.0):
+    def __init__(self, model: torch.nn.Module, epsilon: float, alpha: float, n: int, temperature=1.0):
         """
         Parameters
         ----------
