@@ -9,10 +9,8 @@ import torch
 import torch.backends.cudnn as cudnn
 import torch.nn as nn
 import data_loader
-# import model_loader
 from model import ResNet18
 
-# from utils import progress_bar
 from collections import OrderedDict
 
 from adversarial import FGSM
@@ -151,7 +149,6 @@ def test(attacker):
         adv_correct += predx.eq(y.data).cpu().sum().item()
         adv_acc = 100.*adv_correct/total
 
-        
         test_adv_loss += adv_loss.data
         if args.local_rank % ngpus_per_node == 0:
             print(idx, len(testloader),'Testing Loss {:.3f}, acc {:.3f} , adv Loss {:.3f}, adv acc {:.3f}'.format(test_clean_loss/(idx+1), clean_acc, test_adv_loss/(idx+1), adv_acc))

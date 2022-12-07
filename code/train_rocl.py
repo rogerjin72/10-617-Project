@@ -35,11 +35,8 @@ Rep = InstanceAdversary(model, epsilon=args.epsilon, alpha=args.alpha, min_val=a
 # Aggregating model parameter & projection parameter #
 model_params = model.parameters()
 
-# LARS optimizer from KAKAO-BRAIN github "pip install torchlars" or git from https://github.com/kakaobrain/torchlars
-base_optimizer  = optim.SGD(model_params, lr=args.lr, momentum=0.9, weight_decay=args.decay)
-
-# from torchlars import LARS
-optimizer = base_optimizer #LARS(optimizer=base_optimizer, eps=1e-8, trust_coef=0.001)
+# SGD optimizer
+optimizer  = optim.SGD(model_params, lr=args.lr, momentum=0.9, weight_decay=args.decay)
 
 # Cosine learning rate annealing (SGDR) & Learning rate warmup git from https://github.com/ildoonet/pytorch-gradual-warmup-lr #
 scheduler_cosine = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, args.epoch)
@@ -90,9 +87,6 @@ def train(epoch):
             slices = 2
         
         outputs = model(inputs)
-        # print(inputs, outputs)
-        # similarity, gathered_outputs = pairwise_similarity(outputs, temperature=args.temperature, multi_gpu=multi_gpu, adv_type = args.advtrain_type) 
-                
         simloss  = NT_xent_loss(outputs, temperature=args.temperature, slices=slices) #, args.advtrain_type)
         
         if not (args.advtrain_type=='None'):

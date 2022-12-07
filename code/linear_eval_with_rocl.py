@@ -23,7 +23,6 @@ import data_loader
 from model import ResNet18
 
 from args import get_args_linear_eval
-# from utils import progress_bar, checkpoint
 from collections import OrderedDict
 from adversarial import FGSM
 from dct_adversarial import DCTFGSM
@@ -89,17 +88,6 @@ def load(args, epoch):
     model.load_state_dict(new_state_dict)
     model.fc = nn.Identity()
     
-    if args.ss:
-        # ??????????
-        # # projector = Projector(expansion=expansion)
-        # # checkpoint_p = torch.load(args.load_checkpoint+'_projector'+add)
-        # # new_state_dict = OrderedDict()
-        # # for k, v in checkpoint_p['model'].items():
-        # #     name = k[7:]
-        # #     new_state_dict[name] = v
-        # # projector.load_state_dict(new_state_dict)
-        assert(False)
-    
     if args.dataset=='cifar-10':
         Linear = nn.Sequential(nn.Linear(512*expansion, 10))
     elif args.dataset=='cifar-100':
@@ -108,23 +96,15 @@ def load(args, epoch):
     model_params = []
     if args.finetune:
         model_params += model.parameters()
-        if args.ss:
-            model_params += projector.parameters()
     model_params += Linear.parameters()
     loptim = torch.optim.SGD(model_params, lr = args.lr, momentum=0.9, weight_decay=5e-4)
    
     use_cuda = torch.cuda.is_available()
     if use_cuda:
-        ngpus_per_node = torch.cuda.device_count()
         model.cuda()
         Linear.cuda()
         model = nn.DataParallel(model)
         Linear = nn.DataParallel(Linear)
-        if args.ss:
-            # ???????
-            # # projector.cuda()
-            # # projector = nn.DataParallel(projector)
-            assert(False)
     else:
         assert("Need to use GPU...")
 
@@ -140,11 +120,7 @@ def load(args, epoch):
         else:
             attacker = DCTFGSM(model, linear=Linear,epsilon=args.epsilon, alpha=args.alpha, n=args.k)
     if args.adv_img:
-        if args.ss:
-            return model, Linear, projector, loptim, attacker
         return model, Linear, 'None', loptim, attacker
-    if args.ss:
-        return model, Linear, projector, loptim, 'None'
     return model, Linear, 'None', loptim, 'None'
 
 criterion = nn.CrossEntropyLoss()
@@ -154,8 +130,6 @@ def linear_train(epoch, model, Linear, projector, loptim, attacker=None):
     Linear.train()
     if args.finetune:
         model.train()
-        if args.ss:
-            projector.train()
     else:
         model.eval()
 
@@ -196,13 +170,6 @@ def linear_train(epoch, model, Linear, projector, loptim, attacker=None):
             assert('choose the linear evaluation data type (clean, adv_img)')
 
         feat = model(total_inputs)
-        if args.ss:
-            output_p = projector(feat)
-            B = ori.size(0)
-
-            similarity, _ = pairwise_similarity(output_p[:2*B,:2*B], temperature=args.temperature, multi_gpu=False, adv_type = 'None')
-            simloss  = NT_xent(similarity, 'None')
-        
         output = Linear(feat)
 
         #new
@@ -213,9 +180,6 @@ def linear_train(epoch, model, Linear, projector, loptim, attacker=None):
         
         _, predx = torch.max(output.data, 1)
         loss = criterion(output, total_targets) + 0.1 * loss_new_2
-        
-        if args.ss:
-            loss += simloss
 
         correct += predx.eq(total_targets.data).cpu().sum().item()
         total += total_targets.size(0)
@@ -302,8 +266,6 @@ if args.epochwise:
             test_acc, model, linear = test(model, linear)
             adjust_lr(i, loptim)
 
-        checkpoint(model, test_acc, args.epoch, args, loptim, save_name_add='epochwise'+str(k))
-        checkpoint(linear, test_acc, args.epoch, args, loptim, save_name_add='epochwise'+str(k)+'_linear')
         if args.local_rank % ngpus_per_node == 0:
             with open(logname, 'a') as logfile:
                 logwriter = csv.writer(logfile, delimiter=',')
@@ -337,8 +299,6 @@ for epoch in range(args.epoch):
         os.mkdir('./checkpoint')
     torch.save(state, save_name)
 
-checkpoint(model, test_acc, args.epoch, args, loptim)
-checkpoint(linear, test_acc, args.epoch, args, loptim, save_name_add='_linear')
 
 if args.local_rank % ngpus_per_node == 0:
     with open(logname, 'a') as logfile:
