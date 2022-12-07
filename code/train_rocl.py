@@ -1,3 +1,5 @@
+# reference: https://github.com/Kim-Minseon/RoCL/blob/master/src/rocl_train.py
+
 import data_loader
 from model import ResNet18
 from args import get_args

@@ -1,3 +1,5 @@
+# reference: https://github.com/Kim-Minseon/RoCL/tree/master/src/models
+
 '''ResNet in PyTorch.
 
 BasicBlock and Bottleneck module is from the original ResNet paper:

@@ -1,3 +1,5 @@
+# reference: https://github.com/Kim-Minseon/RoCL/blob/master/src/attack_lib.py
+
 import torch
 import torch.nn.functional as F 
 

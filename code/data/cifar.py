@@ -1,3 +1,5 @@
+# reference: https://github.com/Kim-Minseon/RoCL/tree/master/src/data
+
 from PIL import Image
 import os
 import os.path

@@ -1,3 +1,5 @@
+# reference: https://github.com/tensorflow/neural-structured-learning/blob/master/research/multi_representation_adversary/multi_representation_adversary/transforms.py
+
 import torch
 import numpy as np
 import torch.nn.functional as F 
