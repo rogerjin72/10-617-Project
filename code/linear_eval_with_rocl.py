@@ -206,9 +206,9 @@ def linear_train(epoch, model, Linear, projector, loptim, attacker=None):
 
         #new
         if args.adv_img:
-            loss_new_2 = NT_xent_loss(output, args.temperature, 3)
+            loss_new_2 = NT_xent_loss(output, args.temperature, 3, rince=args.rince)
         else:
-            loss_new_2 = NT_xent_loss(output, args.temperature)
+            loss_new_2 = NT_xent_loss(output, args.temperature, rince=args.rince)
         
         _, predx = torch.max(output.data, 1)
         loss = criterion(output, total_targets) + 0.1 * loss_new_2
