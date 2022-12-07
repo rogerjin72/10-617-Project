@@ -1,3 +1,6 @@
+# reference: https://github.com/Kim-Minseon/RoCL/blob/master/src/loss.py
+# RINCE: https://github.com/chingyaoc/RINCE
+
 import torch
 
 epsilon = 1e-8
