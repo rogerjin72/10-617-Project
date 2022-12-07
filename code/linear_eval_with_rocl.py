@@ -3,21 +3,12 @@
 
 from __future__ import print_function
 
-import argparse
 import csv
 import os
-import json
-import copy
 
-import numpy as np
 import torch
-from torch.autograd import Variable
 import torch.backends.cudnn as cudnn
 import torch.nn as nn
-import torch.nn.functional as F
-import torch.optim as optim
-import torchvision.transforms as transforms
-import torchvision.datasets as datasets
 
 import data_loader
 from model import ResNet18

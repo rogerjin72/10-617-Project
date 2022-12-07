@@ -41,7 +41,6 @@ def get_args():
 
     ##### arguments for distributted parallel #####
     parser.add_argument('--local_rank', type=int, default=0)   
-    parser.add_argument('--ngpu', type=int, default=1)
 
     ##### arguments for PGD attack & Adversarial Training #####
     parser.add_argument('--min', type=float, default=0.0, help='min for cliping image')
@@ -67,7 +66,6 @@ def get_args_linear_eval():
     parser.add_argument('--train_type', default='linear_eval', type=str, help='contrastive/linear eval/test')
     parser.add_argument('--finetune', default=False, type=bool, help='finetune the model')
     parser.add_argument('--epochwise', type=bool, default=False, help='epochwise saving...')
-    parser.add_argument('--ss', default=False, type=bool, help='using self-supervised learning loss')
 
     parser.add_argument('--trans', default=False, type=bool, help='use transformed sample')
     parser.add_argument('--clean', default=False, type=bool, help='use clean sample')
@@ -94,7 +92,6 @@ def get_args_linear_eval():
 
     ##### arguments for distributted parallel #####
     parser.add_argument('--local_rank', type=int, default=0)   
-    parser.add_argument('--ngpu', type=int, default=1)
     
     ##### arguments for PGD attack & Adversarial Training #####
     parser.add_argument('--dct', type=bool, default=False, help='apply DCT transformation')
@@ -144,7 +141,6 @@ def get_adversarial_eval():
 
     ##### arguments for distributted parallel #####
     parser.add_argument('--local_rank', type=int, default=0)   
-    parser.add_argument('--ngpu', type=int, default=1)
     
     ##### arguments for PGD attack & Adversarial Training #####
     parser.add_argument('--min', type=float, default=0.0,
@@ -181,7 +177,6 @@ def get_args_test():
  
     ##### arguments for distributted parallel #####
     parser.add_argument('--local_rank', type=int, default=0)   
-    parser.add_argument('--ngpu', type=int, default=1)
     
     parser.add_argument('--attack_type', type=str, default='linf',
         help='adversarial l_p')
