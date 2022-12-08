@@ -211,7 +211,8 @@ def linear_train(epoch, model, Linear, projector, loptim, attacker=None):
             loss_new_2 = NT_xent_loss(output, args.temperature, rince=args.rince)
         
         _, predx = torch.max(output.data, 1)
-        loss = criterion(output, total_targets) + 0.1 * loss_new_2
+        # print(loss_new_2)
+        loss = criterion(output, total_targets) + 0.5 * loss_new_2
         
         if args.ss:
             loss += simloss

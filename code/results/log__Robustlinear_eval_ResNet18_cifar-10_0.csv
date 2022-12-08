@@ -1,2 +1,2 @@
 random_start,attack_type,epsilon,k,adv_acc
-True,linf,0.0314,20,26.25
+True,linf,0.0314,20,25.29
